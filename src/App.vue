@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid vh-100">
-    <div class="row" style="height: 10%">
+    <div style="height: 10%">
       navbar
     </div>
     <div class="row" style="height: 90%">
@@ -8,14 +8,14 @@
         hoi
       </div>
       <div class="col-11 h-100">
-        <div class="row" style="height: 5%">
+        <div class="d-flex justify-content-end" style="height: 5%">
           <div>
             {{page.size*page.number+1}}-{{page.size*(page.number)+page.numberOfElements}} of {{page.totalElements}}
-            <button v-on:click="getPage(page, -1)" :disabled="page.first">Prev</button>
-            <button v-on:click="getPage(page, 1)" :disabled="page.last">Next</button>
+            <button @click="getPage(page, -1)" :disabled="page.first">Prev</button>
+            <button @click="getPage(page, 1)" :disabled="page.last">Next</button>
           </div>
         </div>
-        <div class="row overflow-auto" style="height: 95%">
+        <div class="overflow-auto" style="height: 95%">
           <ul class="list-group">
             <li class="list-group-item" v-for="mail of page.content" :key="mail.id">
               {{mail.sentFrom}}
