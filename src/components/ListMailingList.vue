@@ -101,6 +101,6 @@ export default {
 
 <style scoped>
 #list-style{
-  width: 200px
+  width: 300px
 }
 </style>

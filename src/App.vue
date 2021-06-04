@@ -3,7 +3,7 @@
     <mail-navbar/>
     <div class="d-flex">
       <list-mailing-list @setMailingList="setMailingList($event)"/>
-      <mailbox v-bind:mailing-list="mailingList" />
+      <mailbox v-bind:mailing-list="mailingList"/>
     </div>
   </div>
 
@@ -23,7 +23,7 @@ export default {
   },
   data(){
     return{
-      mailingList: {}
+      mailingList: {},
     }
   },
   methods: {
