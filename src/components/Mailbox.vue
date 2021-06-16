@@ -1,24 +1,27 @@
 <template>
-  <div class="w-100">
+  <div class="w-100" v-if="page.content">
     <div class="w-100 bg-white" v-if="mailSelectedIdx!==-1">
       <div class="d-flex justify-content-end" id="mail-list-header" >
         <div class="my-auto" style="user-select: none">
-          <b-icon-arrow-left v-on:click="mailSelectedIdx = -1" scale="1.5"></b-icon-arrow-left>
+          <b-icon-arrow-left id="icon" v-on:click="mailSelectedIdx = -1" scale="1.5"></b-icon-arrow-left>
           {{page.number*page.size+this.mailSelectedIdx+1}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first && mailSelectedIdx===0"></b-icon-caret-left-fill>
-          <b-icon-caret-left-fill id="icon" v-on:click="getPreviousMail" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
+          <b-icon-caret-left-fill id="icon" v-on:click="setSelectedMail(mailSelectedIdx-1)" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
           <b-icon-caret-right-fill style="color: grey" class="mx-lg-5" scale="1.5" v-if="page.last && mailSelectedIdx+1===page.numberOfElements"></b-icon-caret-right-fill>
-          <b-icon-caret-right-fill id="icon" v-on:click="getNextMail" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
+          <b-icon-caret-right-fill id="icon" v-on:click="setSelectedMail(mailSelectedIdx+1)" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
         </div>
       </div>
-      <div class="overflow-auto rounded-0" id="mail-list">
+      <div class="overflow-auto rounded-0" id="mail-view">
         <div>
           From: {{ page.content[mailSelectedIdx].sentFrom }}
         </div>
         <div>
-          subject: {{ page.content[mailSelectedIdx].subject }}
+          Subject: {{ page.content[mailSelectedIdx].subject }}
         </div>
-         <pre class="w-100">
+        <div>
+          Date: {{ moment.unix(page.content[mailSelectedIdx].date).format("DD MMM YYYY hh:mm a") }}
+        </div>
+        <pre class="w-100">
            {{ page.content[mailSelectedIdx].body }}
          </pre>
       </div>
@@ -28,9 +31,9 @@
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
-          <b-icon-caret-left-fill id="icon" v-on:click="getMail(page.number-1)" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
+          <b-icon-caret-left-fill id="icon" @click="prevPage" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
           <b-icon-caret-right-fill style="color: grey" class="mx-lg-5" scale="1.5" v-if="page.last"></b-icon-caret-right-fill>
-          <b-icon-caret-right-fill id="icon" v-on:click="getMail(page.number+1)" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
+          <b-icon-caret-right-fill id="icon" @click="nextPage" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
         </div>
       </div>
       <b-list-group class="overflow-auto rounded-0" id="mail-list" flush>
@@ -62,9 +65,6 @@ const url = "http://localhost:8080/"
 
 export default {
   name: "Mailbox",
-  props: {
-    mailingList: {},
-  },
   data(){
     return{
       mailSelectedIdx: -1,
@@ -72,36 +72,26 @@ export default {
       page: {},
     }
   },
-  watch: {
-    mailingList: {
-      handler: function(){
-        this.mailSelectedIdx = -1;
-        this.getMail(0);
-      }
+  mounted() {
+    if(this.$route.params.query){
+        const str = url + "email/search?q=" + this.$route.params.query + "&id=" + this.$route.params.id + "&page=" + this.$route.params.page
+        console.log(str)
+        this.getApiRequest(str)
+    } else {
+      this.getMail(this.$route.params.page, this.$route.params.id)
     }
   },
   methods: {
     setSelectedMail(index){
+      if(index >= this.page.size){
+        this.nextPage()
+      } else if(index < 0){
+        this.prevPage()
+      }
       this.mailSelectedIdx = index;
     },
-    async getNextMail(){
-      if(this.mailSelectedIdx+1 < this.page.numberOfElements){
-        this.mailSelectedIdx += 1;
-      }else{
-        await this.getMail(this.page.number+1)
-        this.mailSelectedIdx = 0;
-      }
-    },
-    async getPreviousMail(){
-      if(this.mailSelectedIdx > 0){
-        this.mailSelectedIdx -= 1;
-      }else{
-        await this.getMail(this.page.number-1)
-        this.mailSelectedIdx = this.page.size - 1;
-      }
-    },
-    getMail(page_nr){
-      axios.get(url + "mailing-list/" + this.mailingList.id + "/email?page=" + page_nr + "&sort=date&size=50").then((response) => {
+    getApiRequest(url){
+      axios.get(url).then((response) => {
         this.loading = false;
         this.page = response.data;
         console.log(this.page)
@@ -109,8 +99,31 @@ export default {
         this.loading = false;
         console.log(error);
       });
+    },
+    getMail(page_nr, id){
+      this.getApiRequest(url + "mailing-list/" + id + "/email?page=" + page_nr + "&sort=date")
+    },
+    nextPage(){
+      const page_nr = this.page.number + 1;
+      if(this.$route.params.query){
+        this.$router.push({ name: 'Search', params: { id: this.$route.params.id, query: this.$route.params.query, page: page_nr}})
+      } else {
+        this.$router.push({ name: 'Mail', params: { id: this.$route.params.id, page: page_nr }})
+      }
+    },
+    prevPage() {
+      const page_nr = this.page.number - 1;
+      if (this.$route.params.query) {
+        this.$router.push({
+          name: 'Search',
+          params: {id: this.$route.params.id, query: this.$route.params.query, page: page_nr}
+        })
+      } else {
+        this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: page_nr}})
+      }
     }
-  }
+  },
+
 }
 </script>
 
@@ -119,6 +132,12 @@ export default {
   height: 40px;
 }
 #mail-list{
+  height: calc(100vh - (70px + 40px));
+  width: calc(100vw - 300px);
+  border: 1px solid darkgray;
+}
+#mail-view{
+  padding: 10px;
   height: calc(100vh - (70px + 40px));
   width: calc(100vw - 300px);
   border: 1px solid darkgray;

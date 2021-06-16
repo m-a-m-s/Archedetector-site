@@ -35,6 +35,12 @@
               required
           ></b-form-input>
         </b-form-group>
+        <input type="checkbox" id="git" value="git" v-model="form.git">
+        <label for="git">Github</label>
+        <br>
+        <input type="checkbox" id="jira" value="jira" v-model="form.jira">
+        <label for="jira">Jira</label>
+        <br>
       </b-form>
       <b-button class="mt-3" block @click="onCancel">cancel</b-button>
       <b-button class="mt-3" block @click="onSubmit">submit</b-button>
@@ -55,6 +61,8 @@ export default {
       form: {
         name: '',
         url: '',
+        git: false,
+        jira: false
       },
       listMailingList: [],
       mailingList: {}
@@ -71,7 +79,7 @@ export default {
   methods: {
     setMailingList(mailingList){
       this.mailingList = mailingList;
-      this.$emit('setMailingList', mailingList);
+      this.$router.push({ name: 'Mail', params: { id: mailingList.id, page: "0"}})
     },
     isSelected (mailingList) {
       return mailingList.id === this.mailingList.id;
@@ -79,7 +87,15 @@ export default {
     onSubmit() {
       this.$bvModal.hide('add-mailing-list')
       this.loading = true;
-      axios.post(url + "mailing-list/add-from-apache-archive", this.form).then((response) => {
+      let filter = "?filters=";
+      if(this.form.git && this.form.jira){
+        filter += "git,jira"
+      } else if(this.form.jira){
+        filter += "jira"
+      } else if(this.form.git){
+        filter += "git"
+      }
+      axios.post(url + "mailing-list/add-from-apache-archive" + filter, this.form).then((response) => {
         this.loading = false;
         this.listMailingList.push(response.data)
 
@@ -87,12 +103,19 @@ export default {
         this.loading = false;
         console.log(error);
       });
+      this.form.url = ''
+      this.form.name = ''
+      this.form.git = false
+      this.form.jira = false
+
     },
     onCancel() {
       console.log("cancel")
       this.$bvModal.hide('add-mailing-list')
       this.form.url = ''
       this.form.name = ''
+      this.form.git = false
+      this.form.jira = false
     }
   }
 }
