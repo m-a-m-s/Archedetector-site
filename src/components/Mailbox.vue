@@ -1,7 +1,30 @@
 <template>
   <div class="w-100" v-if="page.content">
     <div class="w-100 bg-white" v-if="mailSelectedIdx!==-1">
-      <div class="d-flex justify-content-end" id="mail-list-header" >
+      <div class="d-flex justify-content-between border-bottom" id="mail-list-header" >
+        <div class="px-1 d-flex align-items-center">
+          <b-dropdown size="lg"  variant="link" toggle-class="text-decoration-none" no-caret>
+            <template #button-content>
+              <b-icon-tag></b-icon-tag>
+            </template>
+            <b-dropdown-form id="dropdown-form" text="Dropdown with form" ref="dropdown">
+              <b-form-group>
+                <b-form-checkbox-group
+                    id="checkbox-group-2"
+                    name="flavour-2"
+                    v-model="page.content[mailSelectedIdx].tags">
+                  <b-form-checkbox v-for="tag in tags" :key="tag.id" :value="tag">{{tag.name}}</b-form-checkbox>
+                </b-form-checkbox-group>
+                <b-button variant="primary" size="sm" @click="saveTags">Save</b-button>
+              </b-form-group>
+            </b-dropdown-form>
+          </b-dropdown>
+          <div class="p-1" v-for="tag in page.content[mailSelectedIdx].tags" :key="tag.id">
+              <div class="p-1 shadow-sm rounded bg-light border" style="user-select: none;">
+                {{tag.name}}
+              </div>
+          </div>
+        </div>
         <div class="my-auto" style="user-select: none">
           <b-icon-arrow-left id="icon" v-on:click="mailSelectedIdx = -1" scale="1.5"></b-icon-arrow-left>
           {{page.number*page.size+this.mailSelectedIdx+1}} of {{ page.totalElements }}
@@ -12,22 +35,22 @@
         </div>
       </div>
       <div class="overflow-auto rounded-0" id="mail-view">
-        <div>
+        <p>
           From: {{ page.content[mailSelectedIdx].sentFrom }}
-        </div>
-        <div>
+        </p>
+        <p>
           Subject: {{ page.content[mailSelectedIdx].subject }}
-        </div>
-        <div>
+        </p>
+        <p>
           Date: {{ moment.unix(page.content[mailSelectedIdx].date).format("DD MMM YYYY hh:mm a") }}
-        </div>
+        </p>
         <pre class="w-100">
            {{ page.content[mailSelectedIdx].body }}
          </pre>
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
-      <div class="d-flex justify-content-end" id="mail-list-header" >
+      <div class="d-flex justify-content-end border-bottom" id="mail-list-header" >
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -61,69 +84,127 @@
 import axios from "axios";
 
 
-const url = "http://localhost:8080/"
+const url = "http://localhost:8080/api/v1/"
 
 export default {
   name: "Mailbox",
   data(){
     return{
       mailSelectedIdx: -1,
-      loading: false,
       page: {},
+      tags: [],
+      selectedTags: []
     }
   },
   mounted() {
+    axios.get(url+"tag").then((response) => {
+      this.tags=response.data;
+    })
     if(this.$route.params.query){
-        const str = url + "email/search?q=" + this.$route.params.query + "&id=" + this.$route.params.id + "&page=" + this.$route.params.page
-        console.log(str)
+      let str = ""
+      if(this.$route.params.id === 'all') {
+        axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+          let ids = ""
+          let i = 0
+          for(; i < response.data.mailingLists.length-1; i++){
+            ids += response.data.mailingLists[i].id + ","
+          }
+          ids += response.data.mailingLists[i].id
+          str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page
+          this.getApiRequest(str)
+        })
+      } else {
+        str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page
         this.getApiRequest(str)
+      }
     } else {
       this.getMail(this.$route.params.page, this.$route.params.id)
     }
   },
   methods: {
-    setSelectedMail(index){
-      if(index >= this.page.size){
+    setSelectedMail(index) {
+      if (index >= this.page.size) {
         this.nextPage()
-      } else if(index < 0){
+        this.mailSelectedIdx = 0;
+      } else if (index < 0) {
         this.prevPage()
+        this.mailSelectedIdx = 19;
+      }else {
+        this.mailSelectedIdx = index;
       }
-      this.mailSelectedIdx = index;
     },
-    getApiRequest(url){
+    getApiRequest(url) {
       axios.get(url).then((response) => {
-        this.loading = false;
         this.page = response.data;
-        console.log(this.page)
       }, (error) => {
-        this.loading = false;
         console.log(error);
       });
     },
-    getMail(page_nr, id){
-      this.getApiRequest(url + "mailing-list/" + id + "/email?page=" + page_nr + "&sort=date")
-    },
-    nextPage(){
-      const page_nr = this.page.number + 1;
-      if(this.$route.params.query){
-        this.$router.push({ name: 'Search', params: { id: this.$route.params.id, query: this.$route.params.query, page: page_nr}})
+    getMail(page_nr, id) {
+      if (this.$route.params.id === "all") {
+        this.getApiRequest(url + "query-collection/" + this.$route.params.queryCollectionId + "/email?page=" + page_nr + "&sort=date")
       } else {
-        this.$router.push({ name: 'Mail', params: { id: this.$route.params.id, page: page_nr }})
+        this.getApiRequest(url + "mailing-list/" + id + "/email?page=" + page_nr + "&sort=date")
+      }
+    },
+    nextPage() {
+      const page_nr = this.page.number + 1;
+      if (this.$route.params.query) {
+        this.$router.push({
+          name: 'MailSearch',
+          params: {id: this.$route.params.id, query: this.$route.params.query, page: page_nr}
+        })
+      } else {
+        this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: page_nr}})
       }
     },
     prevPage() {
       const page_nr = this.page.number - 1;
       if (this.$route.params.query) {
         this.$router.push({
-          name: 'Search',
+          name: 'MailSearch',
           params: {id: this.$route.params.id, query: this.$route.params.query, page: page_nr}
         })
       } else {
         this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: page_nr}})
       }
-    }
+    },
+    saveTags() {
+      axios.post(url + "email", this.page.content[this.mailSelectedIdx]).then(() => {
+      }, (error) => {
+        console.log(error);
+      });
+    },
   },
+  watch:{
+    '$route.params': {
+      handler: function(params) {
+        if(params.query){
+          let str = ""
+          if(params.id === 'all') {
+            axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+              let ids = ""
+              let i = 0
+              for(; i < response.data.mailingLists.length-1; i++){
+                ids += response.data.mailingLists[i].id + ","
+              }
+              ids += response.data.mailingLists[i].id
+              str = url + "email/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page
+              this.getApiRequest(str)
+            })
 
+          } else {
+            str = url + "email/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page
+            this.getApiRequest(str)
+          }
+        } else {
+          this.getMail(params.page, params.id)
+        }
+      },
+      deep: true,
+      immediate: true
+    }
+  }
 }
 </script>
 
@@ -132,17 +213,16 @@ export default {
   height: 40px;
 }
 #mail-list{
-  height: calc(100vh - (70px + 40px));
+  height: calc(100vh - (70px + 30px));
   width: calc(100vw - 300px);
-  border: 1px solid darkgray;
 }
 #mail-view{
   padding: 10px;
-  height: calc(100vh - (70px + 40px));
+  height: calc(100vh - (70px + 30px));
   width: calc(100vw - 300px);
-  border: 1px solid darkgray;
 }
 #icon:hover{
   color: cornflowerblue;
 }
+
 </style>

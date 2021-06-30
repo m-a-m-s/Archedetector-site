@@ -7,10 +7,9 @@ import VueRouter from "vue-router";
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
-
 // Make BootstrapVue available throughout your project
-Vue.use(BootstrapVue)
 
+Vue.use(BootstrapVue)
 // Optionally install the BootstrapVue icon components plugin
 Vue.use(IconsPlugin)
 Vue.use(VueRouter)
@@ -19,8 +18,15 @@ Vue.config.productionTip = false
 Vue.prototype.moment = moment
 
 import Home from './components/Home'
-import MailingList from "@/components/MailingList";
+import QueryCollection from "@/components/QueryCollection";
 import Mailbox from "@/components/Mailbox";
+import IssueBrowser from "@/components/IssueBrowser";
+import ManageMailingList from "@/components/manage/ManageMailingList";
+import ManageIssueList from "@/components/manage/ManageIssueList";
+import ManageData from "@/components/manage/ManageData";
+import ManageTag from "@/components/manage/ManageTag";
+import ManageQueryCollection from "@/components/manage/ManageQueryCollection";
+
 
 const routes = [
     {
@@ -29,20 +35,56 @@ const routes = [
         component: Home,
     },
     {
-        name: "MailingList",
-        path: "/mailing-list",
-        component: MailingList,
+        name: "Manage",
+        path: '/manage',
+        component: ManageData,
+        children: [
+            {
+                name: "ManageIssueList",
+                path: 'issue-list',
+                component: ManageIssueList,
+            },
+            {
+                name: "ManageMailingList",
+                path: 'mailing-list',
+                component: ManageMailingList,
+            },
+            {
+                name: "ManageQueryCollection",
+                path: 'query-collection',
+                component: ManageQueryCollection,
+            },
+            {
+                name: "ManageTag",
+                path: 'tag',
+                component: ManageTag,
+            }
+        ]
+    },
+    {
+        name: "QueryCollection",
+        path: "/query-collection/:queryCollectionId",
+        component: QueryCollection,
         children: [
             {
                 name: "Mail",
-                path: ":id/page/:page",
+                path: "mailing-list/:id/page/:page",
                 component: Mailbox
             },
             {
-
-                name: "Search",
-                path: ":id/search/:query/page/:page",
+                name: "MailSearch",
+                path: "mailing-list/:id/search/:query/page/:page",
                 component: Mailbox
+            },
+            {
+                name: "Issue",
+                path: "issue-list/:id/page/:page",
+                component: IssueBrowser
+            },
+            {
+                name: "IssueSearch",
+                path: "issue-list/:id/search/:query/page/:page",
+                component: IssueBrowser
             }
         ]
     },
