@@ -50,7 +50,10 @@
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
-      <div class="d-flex justify-content-end border-bottom" id="mail-list-header" >
+      <div class="d-flex justify-content-between border-bottom" id="mail-list-header" >
+        <b-button class="m-1" size="sm" variant="primary" @click="downloadCSVData">
+          Export to csv
+        </b-button>
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -175,6 +178,28 @@ export default {
         console.log(error);
       });
     },
+    downloadCSVData(){
+      let csv = 'Id,Tags\n';
+      this.page.content.forEach((email) => {
+        csv += email.messageId + ','
+        csv += '"['
+        if(email.tags.length > 0) {
+          let i = 0
+
+          for (; i < email.tags.length - 1; i++) {
+            csv += email.tags[i].name + ', '
+          }
+          csv += email.tags[i].name
+        }
+        csv += ']"\n'
+      });
+
+      const anchor = document.createElement('a');
+      anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      anchor.target = '_blank';
+      anchor.download = 'search.csv';
+      anchor.click();
+    }
   },
   watch:{
     '$route.params': {
