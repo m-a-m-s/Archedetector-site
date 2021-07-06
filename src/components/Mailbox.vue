@@ -20,9 +20,9 @@
             </b-dropdown-form>
           </b-dropdown>
           <div class="p-1" v-for="tag in page.content[mailSelectedIdx].tags" :key="tag.id">
-              <div class="p-1 shadow-sm rounded bg-light border" style="user-select: none;">
-                {{tag.name}}
-              </div>
+            <div class="p-1 shadow-sm rounded bg-light border" style="user-select: none;">
+              {{tag.name}}
+            </div>
           </div>
         </div>
         <div class="my-auto" style="user-select: none">
@@ -44,16 +44,13 @@
         <p>
           Date: {{ moment.unix(page.content[mailSelectedIdx].date).format("DD MMM YYYY hh:mm a") }}
         </p>
-        <pre class="w-100">
+        <pre class="w-100" style="word-break: break-word; white-space: pre-wrap;">
            {{ page.content[mailSelectedIdx].body }}
          </pre>
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
-      <div class="d-flex justify-content-between border-bottom" id="mail-list-header" >
-        <b-button class="m-1" size="sm" variant="primary" @click="downloadCSVData">
-          Export to csv
-        </b-button>
+      <div class="d-flex justify-content-end border-bottom" id="mail-list-header" >
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -76,6 +73,13 @@
           </div>
           <div>
             Date: {{ moment.unix(mail.date).format("DD MMM YYYY hh:mm a") }}
+          </div>
+          <div class="d-flex flex-row" v-if="mail.tags.length > 0">
+            <div v-for="tag in mail.tags" :key="tag.id">
+              <div class="me-2 p-1 shadow-sm rounded bg-light border" style="user-select: none;">
+                {{tag.name}}
+              </div>
+            </div>
           </div>
         </b-list-group-item>
       </b-list-group>
@@ -113,11 +117,11 @@ export default {
             ids += response.data.mailingLists[i].id + ","
           }
           ids += response.data.mailingLists[i].id
-          str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page
+          str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
           this.getApiRequest(str)
         })
       } else {
-        str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page
+        str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
         this.getApiRequest(str)
       }
     } else {
@@ -139,6 +143,7 @@ export default {
     getApiRequest(url) {
       axios.get(url).then((response) => {
         this.page = response.data;
+        console.log(this.page);
       }, (error) => {
         console.log(error);
       });
@@ -177,28 +182,6 @@ export default {
       }, (error) => {
         console.log(error);
       });
-    },
-    downloadCSVData(){
-      let csv = 'Id,Tags\n';
-      this.page.content.forEach((email) => {
-        csv += email.messageId + ','
-        csv += '"['
-        if(email.tags.length > 0) {
-          let i = 0
-
-          for (; i < email.tags.length - 1; i++) {
-            csv += email.tags[i].name + ', '
-          }
-          csv += email.tags[i].name
-        }
-        csv += ']"\n'
-      });
-
-      const anchor = document.createElement('a');
-      anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-      anchor.target = '_blank';
-      anchor.download = 'search.csv';
-      anchor.click();
     }
   },
   watch:{
@@ -214,12 +197,12 @@ export default {
                 ids += response.data.mailingLists[i].id + ","
               }
               ids += response.data.mailingLists[i].id
-              str = url + "email/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page
+              str = url + "email/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page + "&size=20"
               this.getApiRequest(str)
             })
 
           } else {
-            str = url + "email/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page
+            str = url + "email/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page + "&size=20"
             this.getApiRequest(str)
           }
         } else {

@@ -4,6 +4,9 @@
     <form class="d-flex w-50 align-items-center" v-on:submit.prevent>
       <input class="w-50 mx-1" v-model="searchQuery" placeholder="Search" v-on:keydown.enter="search">
       <b-button size="sm" @click="search">submit</b-button>
+      <b-button v-if="this.$route.name==='IssueSearch' || this.$route.name==='MailSearch'" class="m-1" size="sm" variant="primary" @click="exportQuery">
+        Export to csv
+      </b-button>
     </form>
     <img class="img-responsive"
          src="@/assets/logo-groningen.svg"
@@ -12,6 +15,10 @@
 </template>
 
 <script>
+import axios from "axios";
+
+const url = "http://localhost:8080/api/v1/"
+
 export default {
   name: "navbar",
   data(){
@@ -41,6 +48,72 @@ export default {
     },
     navigateHome(){
       this.$router.push({name:"Home"});
+    },
+    exportQuery() {
+      if (this.$route.name === "MailSearch") {
+        if(this.$route.params.id === "all") {
+          axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+            let ids = ""
+            let i = 0
+            for (; i < response.data.mailingLists.length - 1; i++) {
+              ids += response.data.mailingLists[i].id + ","
+            }
+            ids += response.data.mailingLists[i].id
+            axios.get(url + "email/export?q=" + this.$route.params.query + "&mailingListIds=" + ids).then(response => {
+              this.saveFile("emailQuery.json", {
+                query: this.searchQuery,
+                resultSize: response.data.length,
+                emails: response.data
+              })
+            })
+          })
+        } else {
+          axios.get(url + "email/export?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id).then(response => {
+            this.saveFile("emailQuery.json",{
+              query: this.searchQuery,
+              resultSize: response.data.length,
+              emails: response.data
+            })
+          })
+        }
+      } else {
+        if(this.$route.params.id === "all") {
+          axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+            let ids = ""
+            let i = 0
+            for (; i < response.data.issueLists.length - 1; i++) {
+              ids += response.data.issueLists[i].id + ","
+            }
+            ids += response.data.issueLists[i].id
+            axios.get(url + "issue/export?q=" + this.$route.params.query + "&issueListIds=" + ids).then(response => {
+              this.saveFile("issueQuery.json", {
+                query: this.searchQuery,
+                resultSize: response.data.length,
+                issues: response.data
+              })
+            })
+          })
+        } else {
+          axios.get(url + "issue/export?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id).then(response => {
+            this.saveFile("issueQuery.json", {
+              query: this.searchQuery,
+              resultSize: response.data.length,
+              issues: response.data
+            })
+          })
+        }
+      }
+    },
+    saveFile(fileName, json){
+      const data = JSON.stringify(json)
+      const blob = new Blob([data], {type: 'text/plain'})
+      const e = document.createEvent('MouseEvents'),
+          a = document.createElement('a');
+      a.download = fileName;
+      a.href = window.URL.createObjectURL(blob);
+      a.dataset.downloadurl = ['text/json', a.download, a.href].join(':');
+      e.initEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+      a.dispatchEvent(e);
     }
   }
 }

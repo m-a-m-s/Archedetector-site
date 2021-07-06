@@ -59,7 +59,7 @@
     </b-card>
     <b-card header-tag="header" class="w-100 mt-5">
       <template #header>
-        <h5 >query Collection List</h5>
+        <h5 >Query Collection List</h5>
       </template>
       <b-table class="w-100 border-top" fixed hover :fields="fields" :items="queryCollections" >
         <template #cell(actions)="data">

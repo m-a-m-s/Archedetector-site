@@ -53,10 +53,7 @@
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
-      <div class="d-flex justify-content-between border-bottom" id="mail-list-header" >
-        <b-button class="m-1" size="sm" variant="primary" @click="downloadCSVData">
-          Export to csv
-        </b-button>
+      <div class="d-flex justify-content-end border-bottom" id="mail-list-header" >
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -76,6 +73,13 @@
           </div>
           <div>
             summary: {{ issue.summary }}
+          </div>
+          <div class="d-flex flex-row" v-if="issue.tags.length > 0">
+            <div v-for="tag in issue.tags" :key="tag.id">
+              <div class="me-2 p-1 shadow-sm rounded border bg-light" style="user-select: none;">
+                {{tag.name}}
+              </div>
+            </div>
           </div>
         </b-list-group-item>
       </b-list-group>
@@ -113,11 +117,11 @@ export default {
             ids += response.data.issueLists[i].id + ","
           }
           ids += response.data.issueLists[i].id
-          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page
+          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
           this.apiGetIssues(str)
         })
       } else {
-        str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page
+        str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
         this.apiGetIssues(str)
       }
     } else {
@@ -130,7 +134,6 @@ export default {
   },
   methods: {
     apiGetIssues(apiUrl){
-      console.log(apiUrl)
       axios.get(apiUrl).then((response) => {
         this.page = response.data;
         console.log(this.page)
@@ -162,33 +165,23 @@ export default {
     },
     nextPage(){
       const page_nr = this.page.number + 1;
-      this.$router.push({ name: 'Issue', params: { id: this.$route.params.id, page: page_nr }})
+      if (this.$route.params.query) {
+        this.$router.push({ name: 'IssueSearch', params: { id: this.$route.params.id, page: page_nr , query: this.$route.params.query}})
+      } else {
+        this.$router.push({ name: 'Issue', params: { id: this.$route.params.id, page: page_nr }})
+      }
+
     },
     prevPage() {
       const page_nr = this.page.number - 1;
-      this.$router.push({name: 'Issue', params: {id: this.$route.params.id, page: page_nr}})
-    },
-    downloadCSVData(){
-      let csv = 'Id,Tags\n';
-      this.page.content.forEach((issue) => {
-
-        csv += issue.key + ',';
-        csv += '"['
-        if(issue.tags.length > 0) {
-          let i = 0
-
-          for (; i < issue.tags.length - 1; i++) {
-            csv += issue.tags[i].name + ', '
-          }
-          csv += issue.tags[i].name
-        }
-        csv += ']"\n'
-      });
-      const anchor = document.createElement('a');
-      anchor.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-      anchor.target = '_blank';
-      anchor.download = 'search.csv';
-      anchor.click();
+      if (this.$route.params.query) {
+        this.$router.push({
+          name: 'IssueSearch',
+          params: {id: this.$route.params.id, page: page_nr, query: this.$route.params.query}
+        })
+      } else {
+        this.$router.push({name: 'Issue', params: {id: this.$route.params.id, page: page_nr}})
+      }
     }
   },
   watch:{
@@ -204,11 +197,11 @@ export default {
                 ids += response.data.issueLists[i].id + ","
               }
               ids += response.data.issueLists[i].id
-              str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page
+              str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
               this.apiGetIssues(str)
             })
           } else {
-            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page
+            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
             this.apiGetIssues(str)
           }
         } else {
