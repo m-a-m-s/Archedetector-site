@@ -17,7 +17,7 @@
 <script>
 import axios from "axios";
 
-const url = "http://localhost:8080/api/v1/"
+const url = process.env.VUE_APP_ARCHEDETECOR_API
 
 export default {
   name: "navbar",

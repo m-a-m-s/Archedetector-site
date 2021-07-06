@@ -52,7 +52,7 @@
 <script>
 import axios from "axios";
 
-const url = "http://localhost:8080/api/v1/"
+const url = process.env.VUE_APP_ARCHEDETECOR_API
 
 export default {
   name: "ManageTag",
@@ -86,6 +86,7 @@ export default {
   },
   methods: {
     saveTag(){
+      console.log(url)
       axios.post(url + "tag", this.tag).then((response) => {
         let idx = -1
         for(let i = 0; i < this.tags.length; i++){
