@@ -2,7 +2,7 @@
   <div class="w-100">
     <div class="d-flex align-items-center p-5 w-100 flex-column">
       <div>
-        <b-button variant="success" @click="$bvModal.show('add-mailing-list')">Add List</b-button>
+        <b-button class="m-2" variant="success" @click="$bvModal.show('add-mailing-list')">Add mailing List</b-button>
       </div>
       <div class="w-100">
         <b-table class="w-100 border" fixed striped hover :fields="fields" :items="mailingLists" >
@@ -27,7 +27,11 @@
               required
           ></b-form-input>
         </b-form-group>
-        <b-form-group id="input-group-2" label="Url to list in http://mail-archives.apache.org/mod_mbox/:" label-for="input-2">
+        <b-form-group id="input-group-2">
+          <label>
+            Url to list in
+            <a href="http://mail-archives.apache.org/mod_mbox/">mail archive</a>
+          </label>
           <b-form-input
               id="input-2"
               v-model="form.url"

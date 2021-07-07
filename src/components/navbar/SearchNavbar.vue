@@ -5,7 +5,7 @@
       <input class="w-50 mx-1" v-model="searchQuery" placeholder="Search" v-on:keydown.enter="search">
       <b-button size="sm" @click="search">submit</b-button>
       <b-button v-if="this.$route.name==='IssueSearch' || this.$route.name==='MailSearch'" class="m-1" size="sm" variant="primary" @click="exportQuery">
-        Export to csv
+        Export to json
       </b-button>
     </form>
     <img class="img-responsive"
@@ -50,6 +50,7 @@ export default {
       this.$router.push({name:"Home"});
     },
     exportQuery() {
+      let q = this.$route.params.query.replaceAll("%2B", "+")
       if (this.$route.name === "MailSearch") {
         if(this.$route.params.id === "all") {
           axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
@@ -61,7 +62,7 @@ export default {
             ids += response.data.mailingLists[i].id
             axios.get(url + "email/export?q=" + this.$route.params.query + "&mailingListIds=" + ids).then(response => {
               this.saveFile("emailQuery.json", {
-                query: this.searchQuery,
+                query: q,
                 resultSize: response.data.length,
                 emails: response.data
               })
@@ -70,7 +71,7 @@ export default {
         } else {
           axios.get(url + "email/export?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id).then(response => {
             this.saveFile("emailQuery.json",{
-              query: this.searchQuery,
+              query: q,
               resultSize: response.data.length,
               emails: response.data
             })
@@ -87,7 +88,7 @@ export default {
             ids += response.data.issueLists[i].id
             axios.get(url + "issue/export?q=" + this.$route.params.query + "&issueListIds=" + ids).then(response => {
               this.saveFile("issueQuery.json", {
-                query: this.searchQuery,
+                query: q,
                 resultSize: response.data.length,
                 issues: response.data
               })
@@ -96,7 +97,7 @@ export default {
         } else {
           axios.get(url + "issue/export?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id).then(response => {
             this.saveFile("issueQuery.json", {
-              query: this.searchQuery,
+              query: q,
               resultSize: response.data.length,
               issues: response.data
             })

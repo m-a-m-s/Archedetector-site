@@ -2,7 +2,7 @@
   <div class="w-100">
     <div class="d-flex align-items-center w-100 flex-column p-5">
       <div>
-        <b-button variant="success" @click="$bvModal.show('add-issue-list')">Add List</b-button>
+        <b-button class="m-2" variant="success" @click="$bvModal.show('add-issue-list')">Add issue List</b-button>
       </div>
       <div class="w-100" >
         <b-table class="w-100 border" striped fixed hover :fields="fields" :items="issueLists" >
