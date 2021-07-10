@@ -3,12 +3,12 @@
     <b-list-group class="overflow-auto" style="width: 300px;   height: calc(100vh - (70px));" flush>
       <b-nav vertical pills>
         <b-nav-item
-            :to="{ name: 'Mail', params: { id: 'all', page: 0}}">
+            :to="{ name: 'Thread', params: { id: 'all', page: 0}}">
           <b> Browse All Maillists </b>
         </b-nav-item>
         <b-nav-item
             v-for="mailingList in listMailingList" :key="mailingList.id"
-            :to="{ name: 'Mail', params: { id: mailingList.id, page: 0}}">
+            :to="{ name: 'Thread', params: { id: mailingList.id, page: 0}}">
           {{mailingList.name}}
         </b-nav-item>
       </b-nav>

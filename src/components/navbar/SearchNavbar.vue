@@ -4,7 +4,7 @@
     <form class="d-flex w-50 align-items-center" v-on:submit.prevent>
       <input class="w-50 mx-1" v-model="searchQuery" placeholder="Search" v-on:keydown.enter="search">
       <b-button size="sm" @click="search">submit</b-button>
-      <b-button v-if="this.$route.name==='IssueSearch' || this.$route.name==='MailSearch'" class="m-1" size="sm" variant="primary" @click="exportQuery">
+      <b-button v-if="this.$route.name==='IssueSearch' || this.$route.name==='MailSearch' || this.$route.name==='ThreadSearch' " class="m-1" size="sm" variant="primary" @click="exportQuery">
         Export to json
       </b-button>
     </form>
@@ -36,13 +36,18 @@ export default {
         } else {
           this.$router.push({name: 'IssueSearch', params: {id: this.$route.params.id, query: q, page: 0}})
         }
-      } else {
+      } else if(this.$route.name === "Mail" || this.$route.name === "MailSearch"){
         if(q==="") {
           this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: 0}})
         } else {
           this.$router.push({name: 'MailSearch', params: {id: this.$route.params.id, query: q, page: 0}})
         }
-
+      } else {
+        if(q==="") {
+          this.$router.push({name: 'Thread', params: {id: this.$route.params.id, page: 0}})
+        } else {
+          this.$router.push({name: 'ThreadSearch', params: {id: this.$route.params.id, query: q, page: 0}})
+        }
       }
 
     },
@@ -77,7 +82,7 @@ export default {
             })
           })
         }
-      } else {
+      } else if (this.$route.name === "IssueSearch"){
         if(this.$route.params.id === "all") {
           axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
             let ids = ""
@@ -100,6 +105,33 @@ export default {
               query: q,
               resultSize: response.data.length,
               issues: response.data
+            })
+          })
+        }
+      } else {
+        if(this.$route.params.id === "all") {
+          axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+            let ids = ""
+            let i = 0
+            for (; i < response.data.mailingLists.length - 1; i++) {
+              ids += response.data.mailingLists[i].id + ","
+            }
+            ids += response.data.mailingLists[i].id
+            console.log(ids)
+            axios.get(url + "email-thread/export?q=" + this.$route.params.query + "&mailingListIds=" + ids).then(response => {
+              this.saveFile("emailThreadQuery.json", {
+                query: q,
+                resultSize: response.data.length,
+                emailThreads: response.data
+              })
+            })
+          })
+        } else {
+          axios.get(url + "email-thread/export?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id).then(response => {
+            this.saveFile("emailThreadQuery.json", {
+              query: q,
+              resultSize: response.data.length,
+              emailThreads: response.data
             })
           })
         }

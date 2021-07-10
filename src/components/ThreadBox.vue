@@ -1,6 +1,6 @@
 <template>
   <div class="w-100" v-if="page.content">
-    <div class="w-100 bg-white" v-if="mailSelectedIdx!==-1">
+    <div class="w-100 bg-white" v-if="threadSelectedIdx!==-1">
       <div class="d-flex justify-content-between border-bottom" id="mail-list-header" >
         <div class="px-1 d-flex align-items-center">
           <b-dropdown size="lg"  variant="link" toggle-class="text-decoration-none" no-caret>
@@ -12,47 +12,53 @@
                 <b-form-checkbox-group
                     id="checkbox-group-2"
                     name="flavour-2"
-                    v-model="page.content[mailSelectedIdx].tags">
+                    v-model="page.content[threadSelectedIdx].tags">
                   <b-form-checkbox v-for="tag in tags" :key="tag.id" :value="tag">{{tag.name}}</b-form-checkbox>
                 </b-form-checkbox-group>
                 <b-button variant="primary" size="sm" @click="saveTags">Save</b-button>
               </b-form-group>
             </b-dropdown-form>
           </b-dropdown>
-          <div class="p-1" v-for="tag in page.content[mailSelectedIdx].tags" :key="tag.id">
+          <div class="p-1" v-for="tag in page.content[threadSelectedIdx].tags" :key="tag.id">
             <div class="p-1 shadow-sm rounded bg-light border" style="user-select: none;">
               {{tag.name}}
             </div>
           </div>
         </div>
         <div class="my-auto" style="user-select: none">
-          <b-icon-arrow-left id="icon" v-on:click="mailSelectedIdx = -1" scale="1.5"></b-icon-arrow-left>
-          {{page.number*page.size+this.mailSelectedIdx+1}} of {{ page.totalElements }}
-          <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first && mailSelectedIdx===0"></b-icon-caret-left-fill>
-          <b-icon-caret-left-fill id="icon" v-on:click="setSelectedMail(mailSelectedIdx-1)" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
-          <b-icon-caret-right-fill style="color: grey" class="mx-lg-5" scale="1.5" v-if="page.last && mailSelectedIdx+1===page.numberOfElements"></b-icon-caret-right-fill>
-          <b-icon-caret-right-fill id="icon" v-on:click="setSelectedMail(mailSelectedIdx+1)" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
+          <b-icon-arrow-left id="icon" v-on:click="threadSelectedIdx = -1" scale="1.5"></b-icon-arrow-left>
+          {{ page.number * page.size + this.threadSelectedIdx + 1 }} of {{ page.totalElements }}
+          <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first && threadSelectedIdx===0"></b-icon-caret-left-fill>
+          <b-icon-caret-left-fill id="icon" v-on:click="setSelectedMail(threadSelectedIdx-1)" class="mx-lg-3" scale="1.5" v-else></b-icon-caret-left-fill>
+          <b-icon-caret-right-fill style="color: grey" class="mx-lg-5" scale="1.5" v-if="page.last && threadSelectedIdx+1===page.numberOfElements"></b-icon-caret-right-fill>
+          <b-icon-caret-right-fill id="icon" v-on:click="setSelectedMail(threadSelectedIdx+1)" class="mx-lg-5" scale="1.5" v-else></b-icon-caret-right-fill>
         </div>
       </div>
-      <div class="overflow-auto rounded-0" id="mail-view">
-        <p>
-          From: {{ page.content[mailSelectedIdx].sentFrom }}
-        </p>
-        <p>
-          Subject: {{ page.content[mailSelectedIdx].subject }}
-        </p>
-        <p>
-          Date: {{ moment.unix(page.content[mailSelectedIdx].date).format("DD MMM YYYY hh:mm a") }}
-        </p>
-        <pre class="w-100" style="word-break: break-word; white-space: pre-wrap;">
-           {{ page.content[mailSelectedIdx].body }}
-         </pre>
+      <div class="p-2 overflow-auto rounded-0" id="mail-view">
+        <div class="p-2" v-for="email in threadSelectedEmail" :key="email.id">
+          <b-card header-tag="header" class="w-100">
+            <template #header>
+              <div class="py-1">
+                <b> From: </b> {{ email.sentFrom }}
+              </div>
+              <div class="py-1">
+                <b> Subject: </b> {{ email.subject }}
+              </div>
+              <div class="py-1">
+                <b> Date: </b> {{ moment.unix(email.date).format("DD MMM YYYY hh:mm a") }}
+              </div>
+            </template>
+            <pre class="w-100" style="word-break: break-word; white-space: pre-wrap;">
+              {{ email.body }}
+            </pre>
+          </b-card>
+        </div>
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
       <div class="d-flex justify-content-between border-bottom p-1" id="mail-list-header" >
-        <b-button @click="navigateToThread" variant="primary">
-          Thread mail list
+        <b-button @click="navigateToFlat" variant="primary">
+          Flat mail list
         </b-button>
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
@@ -66,19 +72,18 @@
         <b-list-group-item
             @click="setSelectedMail(index)"
             action
-            v-for="(mail, index) in page.content" :key="mail.id"
-            id="list-style">
+            v-for="(thread, index) in page.content" :key="thread.id">
           <div>
-            From: {{ mail.sentFrom }}
+            Subject: {{ thread.subject }}
           </div>
           <div>
-            Subject: {{ mail.subject }}
+            Date: {{ moment.unix(thread.date).format("DD MMM YYYY hh:mm a") }}
           </div>
           <div>
-            Date: {{ moment.unix(mail.date).format("DD MMM YYYY hh:mm a") }}
+            Thread size: {{ thread.size }}
           </div>
-          <div class="d-flex flex-row" v-if="mail.tags.length > 0">
-            <div v-for="tag in mail.tags" :key="tag.id">
+          <div class="d-flex flex-row" v-if="thread.tags.length > 0">
+            <div v-for="tag in thread.tags" :key="tag.id">
               <div class="me-2 p-1 shadow-sm rounded bg-light border" style="user-select: none;">
                 {{tag.name}}
               </div>
@@ -100,7 +105,8 @@ export default {
   name: "Mailbox",
   data(){
     return{
-      mailSelectedIdx: -1,
+      threadSelectedIdx: -1,
+      threadSelectedEmail: [],
       page: {},
       tags: [],
       selectedTags: []
@@ -120,75 +126,87 @@ export default {
             ids += response.data.mailingLists[i].id + ","
           }
           ids += response.data.mailingLists[i].id
-          str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
+          str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
           this.getApiRequest(str)
         })
       } else {
-        str = url + "email/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
+        str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
         this.getApiRequest(str)
       }
     } else {
-      this.getMail(this.$route.params.page, this.$route.params.id)
+      this.getThreads(this.$route.params.page, this.$route.params.id)
     }
   },
   methods: {
     setSelectedMail(index) {
       if (index >= this.page.size) {
         this.nextPage()
-        this.mailSelectedIdx = 0;
+        this.threadSelectedIdx = 0;
       } else if (index < 0) {
         this.prevPage()
-        this.mailSelectedIdx = 19;
+        this.threadSelectedIdx = 19;
       }else {
-        this.mailSelectedIdx = index;
+        axios.get(url + "email-thread/" + this.page.content[index].id + "/email").then((response) => {
+          this.threadSelectedEmail = response.data;
+        }, (error) => {
+          console.log(error);
+        });
+        this.threadSelectedIdx = index;
       }
     },
-    getApiRequest(url) {
-      axios.get(url).then((response) => {
+    getApiRequest(request) {
+      axios.get(request).then((response) => {
         this.page = response.data;
+        if(this.threadSelectedIdx !== -1){
+          axios.get( url+ "email-thread/" + this.page.content[this.threadSelectedIdx].id + "/email").then((response) => {
+            this.threadSelectedEmail = response.data;
+          }, (error) => {
+            console.log(error);
+          });
+        }
         console.log(this.page);
       }, (error) => {
         console.log(error);
       });
     },
-    getMail(page_nr, id) {
+    getThreads(page_nr, id) {
       if (this.$route.params.id === "all") {
-        this.getApiRequest(url + "query-collection/" + this.$route.params.queryCollectionId + "/email?page=" + page_nr + "&sort=date")
+        this.getApiRequest(url + "query-collection/" + this.$route.params.queryCollectionId + "/email-thread?page=" + page_nr + "&sort=date")
       } else {
-        this.getApiRequest(url + "mailing-list/" + id + "/email?page=" + page_nr + "&sort=date")
+        this.getApiRequest(url + "mailing-list/" + id + "/email-thread?page=" + page_nr + "&sort=date")
       }
     },
     nextPage() {
       const page_nr = this.page.number + 1;
       if (this.$route.params.query) {
         this.$router.push({
-          name: 'MailSearch',
+          name: 'ThreadSearch',
           params: {id: this.$route.params.id, query: this.$route.params.query, page: page_nr}
         })
       } else {
-        this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: page_nr}})
+        this.$router.push({name: 'Thread', params: {id: this.$route.params.id, page: page_nr}})
       }
     },
     prevPage() {
       const page_nr = this.page.number - 1;
       if (this.$route.params.query) {
         this.$router.push({
-          name: 'MailSearch',
+          name: 'ThreadSearch',
           params: {id: this.$route.params.id, query: this.$route.params.query, page: page_nr}
         })
       } else {
-        this.$router.push({name: 'Mail', params: {id: this.$route.params.id, page: page_nr}})
+        this.$router.push({name: 'Thread', params: {id: this.$route.params.id, page: page_nr}})
       }
     },
     saveTags() {
-      axios.post(url + "email", this.page.content[this.mailSelectedIdx]).then(() => {
+      axios.post(url + "email-thread", this.page.content[this.threadSelectedIdx]).then(() => {
       }, (error) => {
         console.log(error);
       });
     },
-    navigateToThread(){
+    navigateToFlat(){
       this.$router.push({
-        name: 'Thread',
+        name: 'Mail',
         params: {id: this.$route.params.id, page: 0}
       })
     }
@@ -206,16 +224,16 @@ export default {
                 ids += response.data.mailingLists[i].id + ","
               }
               ids += response.data.mailingLists[i].id
-              str = url + "email/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page + "&size=20"
+              str = url + "email-thread/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page + "&size=20"
               this.getApiRequest(str)
             })
 
           } else {
-            str = url + "email/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page + "&size=20"
+            str = url + "email-thread/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page + "&size=20"
             this.getApiRequest(str)
           }
         } else {
-          this.getMail(params.page, params.id)
+          this.getThreads(params.page, params.id)
         }
       },
       deep: true,
@@ -234,7 +252,6 @@ export default {
   width: calc(100vw - 300px);
 }
 #mail-view{
-  padding: 10px;
   height: calc(100vh - (70px + 30px));
   width: calc(100vw - 300px);
 }

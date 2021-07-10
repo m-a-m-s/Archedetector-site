@@ -26,6 +26,7 @@ import ManageIssueList from "@/components/manage/ManageIssueList";
 import ManageData from "@/components/manage/ManageData";
 import ManageTag from "@/components/manage/ManageTag";
 import ManageQueryCollection from "@/components/manage/ManageQueryCollection";
+import ThreadBox from "@/components/ThreadBox";
 
 
 const routes = [
@@ -68,13 +69,23 @@ const routes = [
         children: [
             {
                 name: "Mail",
-                path: "mailing-list/:id/page/:page",
+                path: "mailing-list/:id/email/page/:page",
                 component: Mailbox
             },
             {
                 name: "MailSearch",
-                path: "mailing-list/:id/search/:query/page/:page",
+                path: "mailing-list/:id/email/search/:query/page/:page",
                 component: Mailbox
+            },
+            {
+                name: "Thread",
+                path: "mailing-list/:id/thread/page/:page",
+                component: ThreadBox
+            },
+            {
+                name: "ThreadSearch",
+                path: "mailing-list/:id/thread/search/:query/page/:page",
+                component: ThreadBox
             },
             {
                 name: "Issue",

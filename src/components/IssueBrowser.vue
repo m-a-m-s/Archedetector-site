@@ -36,10 +36,12 @@
       </div>
       <div class="overflow-auto rounded-0" id="mail-view">
         <div class="m-4">
-          <h5>
-            {{ page.content[issueSelectedIdx].key }}
-          </h5>
-
+          <b>{{ page.content[issueSelectedIdx].key }}</b>
+        </div>
+        <div class="m-4">
+          <h4>
+            {{ page.content[issueSelectedIdx].summary }}
+          </h4>
         </div>
         <b class="m-4"> description: </b>
         <div class="m-4" style="overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
