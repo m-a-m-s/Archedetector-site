@@ -48,7 +48,7 @@
                 <b> Date: </b> {{ moment.unix(email.date).format("DD MMM YYYY hh:mm a") }}
               </div>
             </template>
-            <pre class="w-100" style="word-break: break-word; white-space: pre-wrap;">
+            <pre class="w-100" style="white-space: pre-line;">
               {{ email.body }}
             </pre>
           </b-card>

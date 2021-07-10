@@ -22,7 +22,7 @@
         <b-form-group id="input-group-1" label="Project name:" label-for="input-1">
           <b-form-input
               id="input-1"
-              v-model="form.name"
+              v-model="form.issue.name"
               placeholder="Enter name"
               required
           ></b-form-input>
@@ -34,8 +34,19 @@
           </label>
           <b-form-input
               id="input2"
-              v-model="form.key"
+              v-model="form.issue.key"
               placeholder="Enter key"
+              required
+          ></b-form-input>
+        </b-form-group>
+        <b-form-group id="input-group-3">
+          <label>
+            Comma separated users to filter out
+          </label>
+          <b-form-input
+              id="input2"
+              v-model="form.filterUsers"
+              placeholder="Hudson,Avinash Lakshman,Jonathan Ellis"
               required
           ></b-form-input>
         </b-form-group>
@@ -56,8 +67,11 @@ export default {
   data() {
     return {
       form: {
-        name: '',
-        key: ''
+        issue: {
+          name: '',
+          key: ''
+        },
+        filterUsers: ''
       },
       fields: [
         {
@@ -98,13 +112,21 @@ export default {
     },
     onSubmit() {
       this.$bvModal.hide('add-issue-list')
-      axios.post(url + "issue-list/add-from-apache-issues", this.form).then((response) => {
-        this.issueLists.push(response.data)
-      }, (error) => {
-        console.log(error);
-      });
-      this.form.key = ''
-      this.form.name = ''
+      if(this.form.filterUsers.length > 0) {
+        axios.post(url + "issue-list/add-from-apache-issues?filterUsers=" + this.form.filterUsers, this.form.issue).then((response) => {
+          this.issueLists.push(response.data)
+        }, (error) => {
+          console.log(error);
+        });
+      } else {
+        axios.post(url + "issue-list/add-from-apache-issues", this.form.issue).then((response) => {
+          this.issueLists.push(response.data)
+        }, (error) => {
+          console.log(error);
+        });
+      }
+      this.form.issue.key = ''
+      this.form.issue.name = ''
     },
     onCancel() {
       this.$bvModal.hide('add-issue-list')

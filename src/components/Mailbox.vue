@@ -44,7 +44,8 @@
         <p>
           Date: {{ moment.unix(page.content[mailSelectedIdx].date).format("DD MMM YYYY hh:mm a") }}
         </p>
-        <pre class="w-100" style="word-break: break-word; white-space: pre-wrap;">
+        <hr>
+        <pre class="w-100" style="white-space: pre-line;">
            {{ page.content[mailSelectedIdx].body }}
          </pre>
       </div>

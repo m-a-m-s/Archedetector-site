@@ -43,7 +43,7 @@
             {{ page.content[issueSelectedIdx].summary }}
           </h4>
         </div>
-        <div class="m-4" style="overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
+        <div class="m-4" style="overflow-x: auto; white-space: pre-line;">
            {{ page.content[issueSelectedIdx].description }}
         </div>
         <b class="m-4"> Comments: </b>
@@ -61,7 +61,9 @@
                 </div>
               </div>
             </template>
-            {{ comment.body }}
+            <pre class="w-100" style="white-space: pre-line;">
+              {{ comment.body }}
+            </pre>
           </b-card>
         </div>
       </div>
@@ -153,6 +155,7 @@ export default {
         if(this.threadSelectedIdx !== -1){
           axios.get( url+ "issue/" + this.page.content[this.issueSelectedIdx].id + "/comment?sort=date").then((response) => {
             this.issueSelectedComments = response.data;
+
           }, (error) => {
             console.log(error);
           });
@@ -178,6 +181,7 @@ export default {
       }else {
         axios.get(url + "issue/" + this.page.content[index].id + "/comment?sort=date").then((response) => {
           this.issueSelectedComments = response.data;
+          console.log(this.issueSelectedComments)
         }, (error) => {
           console.log(error);
         });
