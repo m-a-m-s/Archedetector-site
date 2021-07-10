@@ -146,7 +146,7 @@ export default {
         this.prevPage()
         this.threadSelectedIdx = 19;
       }else {
-        axios.get(url + "email-thread/" + this.page.content[index].id + "/email").then((response) => {
+        axios.get(url + "email-thread/" + this.page.content[index].id + "/email?sort=date").then((response) => {
           this.threadSelectedEmail = response.data;
         }, (error) => {
           console.log(error);
@@ -158,7 +158,7 @@ export default {
       axios.get(request).then((response) => {
         this.page = response.data;
         if(this.threadSelectedIdx !== -1){
-          axios.get( url+ "email-thread/" + this.page.content[this.threadSelectedIdx].id + "/email").then((response) => {
+          axios.get( url+ "email-thread/" + this.page.content[this.threadSelectedIdx].id + "/email?sort=date").then((response) => {
             this.threadSelectedEmail = response.data;
           }, (error) => {
             console.log(error);

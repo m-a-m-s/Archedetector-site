@@ -43,14 +43,26 @@
             {{ page.content[issueSelectedIdx].summary }}
           </h4>
         </div>
-        <b class="m-4"> description: </b>
         <div class="m-4" style="overflow-x: auto; word-break: break-word; white-space: pre-wrap;">
            {{ page.content[issueSelectedIdx].description }}
         </div>
         <b class="m-4"> Comments: </b>
+
         <div class="m-4" v-for="comment in issueSelectedComments" :key="comment.id">
-          <hr>
-          {{ comment.body }}
+          <b-card header-tag="header" class="w-100">
+            <template #header>
+              <div class="d-flex justify-content-between">
+                <div>
+                  <b> Author: </b>
+                  {{comment.author}}
+                </div>
+                <div>
+                  <b>Date:</b> {{ moment.unix(comment.date).format("DD MMM YYYY hh:mm a") }}
+                </div>
+              </div>
+            </template>
+            {{ comment.body }}
+          </b-card>
         </div>
       </div>
     </div>
@@ -119,18 +131,18 @@ export default {
             ids += response.data.issueLists[i].id + ","
           }
           ids += response.data.issueLists[i].id
-          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
+          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20&sort=date"
           this.apiGetIssues(str)
         })
       } else {
-        str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
+        str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20&sort=date"
         this.apiGetIssues(str)
       }
     } else {
       if(this.$route.params.id === 'all') {
-        this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page);
+        this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page + "&sort=date");
       }else{
-        this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page);
+        this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page + "&sort=date");
       }
     }
   },
@@ -138,6 +150,13 @@ export default {
     apiGetIssues(apiUrl){
       axios.get(apiUrl).then((response) => {
         this.page = response.data;
+        if(this.threadSelectedIdx !== -1){
+          axios.get( url+ "issue/" + this.page.content[this.issueSelectedIdx].id + "/comment?sort=date").then((response) => {
+            this.issueSelectedComments = response.data;
+          }, (error) => {
+            console.log(error);
+          });
+        }
         console.log(this.page)
       }, (error) => {
         console.log(error);
@@ -157,7 +176,7 @@ export default {
         this.issueSelectedIdx=19
         this.prevPage()
       }else {
-        axios.get(url + "issue/" + this.page.content[index].id + "/comment").then((response) => {
+        axios.get(url + "issue/" + this.page.content[index].id + "/comment?sort=date").then((response) => {
           this.issueSelectedComments = response.data;
         }, (error) => {
           console.log(error);
@@ -199,18 +218,18 @@ export default {
                 ids += response.data.issueLists[i].id + ","
               }
               ids += response.data.issueLists[i].id
-              str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
+              str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20&sort=date"
               this.apiGetIssues(str)
             })
           } else {
-            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
+            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20&sort=date"
             this.apiGetIssues(str)
           }
         } else {
           if(this.$route.params.id === 'all') {
-            this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page);
+            this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page + "&sort=date");
           }else{
-            this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page);
+            this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page + "&sort=date");
           }
         }
       },
