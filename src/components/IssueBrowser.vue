@@ -47,7 +47,6 @@
            {{ page.content[issueSelectedIdx].description }}
         </div>
         <b class="m-4"> Comments: </b>
-
         <div class="m-4" v-for="comment in issueSelectedComments" :key="comment.id">
           <b-card header-tag="header" class="w-100">
             <template #header>
@@ -69,7 +68,20 @@
       </div>
     </div>
     <div class="w-100 bg-white" v-else>
-      <div class="d-flex justify-content-end border-bottom" id="mail-list-header" >
+      <div class="d-flex justify-content-between border-bottom p-1" id="mail-list-header" >
+        <div class="d-flex">
+          <b-dropdown size="sm" variant="outline-primary" :text="'Sort by ' + this.sortFields[selectedSortField].displayName">
+            <b-dropdown-item v-for="(field, index) in this.sortFields"
+                             :key="index"
+                             @click="setSortBy(index)">
+              {{field.displayName}}
+            </b-dropdown-item>
+          </b-dropdown>
+          <b-button class="mx-2" size="sm" variant="outline-primary" @click="setSortDirection">
+            <b-icon-arrow-up v-if="sortDirection === 'asc'"></b-icon-arrow-up>
+            <b-icon-arrow-down v-else></b-icon-arrow-down>
+          </b-button>
+        </div>
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -85,10 +97,10 @@
             v-for="(issue, index) in page.content" :key="issue.id"
             id="list-style">
           <div>
-            key: {{ issue.key }}
+            {{ issue.key }}
           </div>
           <div>
-            summary: {{ issue.summary }}
+            {{ issue.summary }}
           </div>
           <div class="d-flex flex-row" v-if="issue.tags.length > 0">
             <div v-for="tag in issue.tags" :key="tag.id">
@@ -117,45 +129,33 @@ export default {
       issueSelectedIdx: -1,
       tags: [],
       page: {},
+      sortDirection: 'desc',
+      sortFields: [
+        {
+          displayName: 'Date',
+          name: 'date'
+        },
+        {
+          displayName: 'Tag Count',
+          name: 'tagCount'
+        }
+      ],
+      selectedSortField: 0
     }
   },
   mounted() {
     axios.get(url+"tag").then((response) => {
       this.tags=response.data;
     })
-    if(this.$route.params.query){
-      let str = ""
-      if(this.$route.params.id === 'all') {
-        axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
-          let ids = ""
-          let i = 0
-          for(; i < response.data.issueLists.length-1; i++){
-            ids += response.data.issueLists[i].id + ","
-          }
-          ids += response.data.issueLists[i].id
-          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20&sort=date"
-          this.apiGetIssues(str)
-        })
-      } else {
-        str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20&sort=date"
-        this.apiGetIssues(str)
-      }
-    } else {
-      if(this.$route.params.id === 'all') {
-        this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page + "&sort=date");
-      }else{
-        this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page + "&sort=date");
-      }
-    }
+    this.getCurrentData()
   },
   methods: {
     apiGetIssues(apiUrl){
       axios.get(apiUrl).then((response) => {
         this.page = response.data;
-        if(this.threadSelectedIdx !== -1){
+        if(this.issueSelectedIdx !== -1){
           axios.get( url+ "issue/" + this.page.content[this.issueSelectedIdx].id + "/comment?sort=date").then((response) => {
             this.issueSelectedComments = response.data;
-
           }, (error) => {
             console.log(error);
           });
@@ -207,35 +207,53 @@ export default {
       } else {
         this.$router.push({name: 'Issue', params: {id: this.$route.params.id, page: page_nr}})
       }
+    },
+    setSortBy(index){
+      this.selectedSortField = index
+      this.getCurrentData();
+    },
+    setSortDirection(){
+      if(this.sortDirection === 'asc'){
+        this.sortDirection = 'desc'
+      } else {
+        this.sortDirection = 'asc'
+      }
+      this.getCurrentData();
+    },
+    getCurrentData(){
+      if(this.$route.params.query){
+        let str = ""
+        if(this.$route.params.id === 'all') {
+          axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+            let ids = ""
+            let i = 0
+            for(; i < response.data.issueLists.length-1; i++){
+              ids += response.data.issueLists[i].id + ","
+            }
+            ids += response.data.issueLists[i].id
+            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
+            this.apiGetIssues(str)
+          })
+        } else {
+          str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
+          this.apiGetIssues(str)
+        }
+      } else {
+        if(this.$route.params.id === 'all') {
+          this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page +
+              "&sort="+ this.sortFields[this.selectedSortField].name + "," + this.sortDirection);
+        }else{
+          this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page +
+              "&sort=" + this.sortFields[this.selectedSortField].name + "," + this.sortDirection);
+        }
+      }
     }
   },
+
   watch:{
     '$route.params': {
       handler: function() {
-        if(this.$route.params.query){
-          let str = ""
-          if(this.$route.params.id === 'all') {
-            axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
-              let ids = ""
-              let i = 0
-              for(; i < response.data.issueLists.length-1; i++){
-                ids += response.data.issueLists[i].id + ","
-              }
-              ids += response.data.issueLists[i].id
-              str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + ids + "&page=" + this.$route.params.page + "&size=20&sort=date"
-              this.apiGetIssues(str)
-            })
-          } else {
-            str = url + "issue/search?q=" + this.$route.params.query + "&issueListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20&sort=date"
-            this.apiGetIssues(str)
-          }
-        } else {
-          if(this.$route.params.id === 'all') {
-            this.apiGetIssues(url + "query-collection/" + this.$route.params.queryCollectionId + "/issue?page=" + this.$route.params.page + "&sort=date");
-          }else{
-            this.apiGetIssues(url + "issue-list/" + this.$route.params.id + "/issue?page=" + this.$route.params.page + "&sort=date");
-          }
-        }
+        this.getCurrentData();
       },
       deep: true
     }

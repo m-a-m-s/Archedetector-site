@@ -57,9 +57,22 @@
     </div>
     <div class="w-100 bg-white" v-else>
       <div class="d-flex justify-content-between border-bottom p-1" id="mail-list-header" >
-        <b-button @click="navigateToFlat" variant="primary">
-          Flat mail list
-        </b-button>
+        <div class="d-flex">
+          <b-dropdown size="sm" variant="outline-primary" :text="'Sort by ' + this.sortFields[selectedSortField].displayName">
+            <b-dropdown-item v-for="(field, index) in this.sortFields"
+                             :key="index"
+                             @click="setSortBy(index)">
+              {{field.displayName}}
+            </b-dropdown-item>
+          </b-dropdown>
+          <b-button class="mx-2" size="sm" variant="outline-primary" @click="setSortDirection">
+            <b-icon-arrow-up v-if="sortDirection === 'asc'"></b-icon-arrow-up>
+            <b-icon-arrow-down v-else></b-icon-arrow-down>
+          </b-button>
+          <b-button @click="navigateToFlat" size="sm" variant="outline-primary">
+            Flatten mail list
+          </b-button>
+        </div>
         <div class="my-auto" style="user-select: none">
           {{page.number*page.size+1}}-{{page.number*page.size + page.numberOfElements}} of {{ page.totalElements }}
           <b-icon-caret-left-fill style="color: grey" class="mx-lg-3" scale="1.5" v-if="page.first"></b-icon-caret-left-fill>
@@ -79,8 +92,8 @@
           <div>
             Date: {{ moment.unix(thread.date).format("DD MMM YYYY hh:mm a") }}
           </div>
-          <div>
-            Thread size: {{ thread.size }}
+          <div class="d-flex align-items-center">
+            <b-icon-envelope class="me-2"></b-icon-envelope> {{ thread.size }}
           </div>
           <div class="d-flex flex-row" v-if="thread.tags.length > 0">
             <div v-for="tag in thread.tags" :key="tag.id">
@@ -109,33 +122,30 @@ export default {
       threadSelectedEmail: [],
       page: {},
       tags: [],
-      selectedTags: []
+      selectedTags: [],
+      sortDirection: 'desc',
+      sortFields: [
+        {
+          displayName: 'Date',
+          name: 'date'
+        },
+        {
+          displayName: 'Tag Count',
+          name: 'tagCount'
+        },
+        {
+          displayName: 'Reply Count',
+          name: 'size'
+        }
+      ],
+      selectedSortField: 0
     }
   },
   mounted() {
     axios.get(url+"tag").then((response) => {
       this.tags=response.data;
     })
-    if(this.$route.params.query){
-      let str = ""
-      if(this.$route.params.id === 'all') {
-        axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
-          let ids = ""
-          let i = 0
-          for(; i < response.data.mailingLists.length-1; i++){
-            ids += response.data.mailingLists[i].id + ","
-          }
-          ids += response.data.mailingLists[i].id
-          str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
-          this.getApiRequest(str)
-        })
-      } else {
-        str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
-        this.getApiRequest(str)
-      }
-    } else {
-      this.getThreads(this.$route.params.page, this.$route.params.id)
-    }
+    this.getCurrentData()
   },
   methods: {
     setSelectedMail(index) {
@@ -171,9 +181,11 @@ export default {
     },
     getThreads(page_nr, id) {
       if (this.$route.params.id === "all") {
-        this.getApiRequest(url + "query-collection/" + this.$route.params.queryCollectionId + "/email-thread?page=" + page_nr + "&sort=date")
+        this.getApiRequest(url + "query-collection/" + this.$route.params.queryCollectionId + "/email-thread?page=" + page_nr +
+            "&sort=" + this.sortFields[this.selectedSortField].name + "," + this.sortDirection)
       } else {
-        this.getApiRequest(url + "mailing-list/" + id + "/email-thread?page=" + page_nr + "&sort=date")
+        this.getApiRequest(url + "mailing-list/" + id + "/email-thread?page=" + page_nr +
+            "&sort=" + this.sortFields[this.selectedSortField].name + "," + this.sortDirection)
       }
     },
     nextPage() {
@@ -209,32 +221,46 @@ export default {
         name: 'Mail',
         params: {id: this.$route.params.id, page: 0}
       })
+    },
+    setSortBy(index){
+      this.selectedSortField = index
+      this.getCurrentData();
+    },
+    setSortDirection(){
+      if(this.sortDirection === 'asc'){
+        this.sortDirection = 'desc'
+      } else {
+        this.sortDirection = 'asc'
+      }
+      this.getCurrentData();
+    },
+    getCurrentData() {
+      if(this.$route.params.query){
+        let str = ""
+        if(this.$route.params.id === 'all') {
+          axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
+            let ids = ""
+            let i = 0
+            for(; i < response.data.mailingLists.length-1; i++){
+              ids += response.data.mailingLists[i].id + ","
+            }
+            ids += response.data.mailingLists[i].id
+            str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + ids + "&page=" + this.$route.params.page + "&size=20"
+            this.getApiRequest(str)
+          })
+        } else {
+          str = url + "email-thread/search?q=" + this.$route.params.query + "&mailingListIds=" + this.$route.params.id + "&page=" + this.$route.params.page + "&size=20"
+          this.getApiRequest(str)
+        }
+      } else {
+        this.getThreads(this.$route.params.page, this.$route.params.id)
+      }
     }
   },
   watch:{
     '$route.params': {
-      handler: function(params) {
-        if(params.query){
-          let str = ""
-          if(params.id === 'all') {
-            axios.get(url + "query-collection/" + this.$route.params.queryCollectionId).then(response => {
-              let ids = ""
-              let i = 0
-              for(; i < response.data.mailingLists.length-1; i++){
-                ids += response.data.mailingLists[i].id + ","
-              }
-              ids += response.data.mailingLists[i].id
-              str = url + "email-thread/search?q=" + params.query + "&mailingListIds=" + ids + "&page=" + params.page + "&size=20"
-              this.getApiRequest(str)
-            })
-
-          } else {
-            str = url + "email-thread/search?q=" + params.query + "&mailingListIds=" + params.id + "&page=" +params.page + "&size=20"
-            this.getApiRequest(str)
-          }
-        } else {
-          this.getThreads(params.page, params.id)
-        }
+      handler: function() {
+        this.getCurrentData()
       },
       deep: true,
       immediate: true
