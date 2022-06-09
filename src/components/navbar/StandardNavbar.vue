@@ -5,6 +5,7 @@
       <b-navbar-nav>
         <b-nav-item :to="{ path: '/' }">Home</b-nav-item>
         <b-nav-item :to="{ path: '/manage/query-collection' }">Manage</b-nav-item>
+		<b-nav-item :to="{ path: '/reindex' }">Reindex</b-nav-item>
       </b-navbar-nav>
     </b-collapse>
     <img class="img-responsive"

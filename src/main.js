@@ -27,6 +27,7 @@ import ManageData from "@/components/manage/ManageData";
 import ManageTag from "@/components/manage/ManageTag";
 import ManageQueryCollection from "@/components/manage/ManageQueryCollection";
 import ThreadBox from "@/components/ThreadBox";
+import Reindex from "@/components/reindex/Reindex";
 
 
 const routes = [
@@ -99,6 +100,11 @@ const routes = [
             }
         ]
     },
+	{
+		name: "Reindex",
+		path: '/reindex',
+		component: Reindex
+	},
     {
         path: '*',
         redirect: '/'
